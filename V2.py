@@ -7,7 +7,18 @@ class PetitJeu():
             [0, 0, 0],
             [0, 0, 0]
         ]
-
+    def whowin(self):
+        for row in self.board:
+            if row[0] == row[1] == row[2] and row[0] != 0:
+                return row[1]
+        for col in range(3):
+            if self.board[0][col] == self.board[1][col] == self.board[2][col] and self.board[0][col] != 0:
+                return self.board[0][col]
+        if self.board[0][0] == self.board[1][1] == self.board[2][2] and self.board[0][0] != 0:
+            return self.board[0][0]
+        if self.board[0][2] == self.board[1][1] == self.board[2][0] and self.board[0][2] != 0:
+            return self.board[0][2]
+        return False
     def check_win(self):
         for row in self.board:
             if row[0] == row[1] == row[2] and row[0] != 0:
@@ -20,7 +31,20 @@ class PetitJeu():
         if self.board[0][2] == self.board[1][1] == self.board[2][0] and self.board[0][2] != 0:
             return True
         return False
-
+    def best_global_move(self, player, global_board):
+        best_eval = -sys.maxsize if player == 1 else sys.maxsize
+        move = (-1, -1)
+        for row in range(3):
+            for col in range(3):
+                if not (global_board[row][col].check_win() or global_board[row][col].check_draw()):
+                    eval = self.evaluate_board(global_board, row, col)
+                    if player == 1 and eval > best_eval:
+                        best_eval = eval
+                        move = (row, col)
+                    elif player == -1 and eval < best_eval:
+                        best_eval = eval
+                        move = (row, col)
+        return move
     def check_draw(self):
         for row in self.board:
             for cell in row:
@@ -142,28 +166,30 @@ class PetitJeu():
 
 def checkwin(board):
     for row in board:
-        if row[0].check_win() and row[0].check_win() == row[1].check_win() == row[2].check_win():
+        if row[0].whowin() != False and row[0].whowin() == row[1].whowin() == row[2].whowin():
             return True
     for col in range(3):
-        if board[0][col].check_win() and board[0][col].check_win() == board[1][col].check_win() == board[2][col].check_win():
+        if board[0][col].whowin() != False and board[0][col].whowin() == board[1][col].whowin() == board[2][col].whowin():
             return True
-    if board[0][0].check_win() and board[0][0].check_win() == board[1][1].check_win() == board[2][2].check_win():
+    if board[0][0].whowin() != False and board[0][0].whowin() == board[1][1].whowin() == board[2][2].whowin():
         return True
-    if board[0][2].check_win() and board[0][2].check_win() == board[1][1].check_win() == board[2][0].check_win():
+    if board[0][2].whowin() != False and board[0][2].whowin() == board[1][1].whowin() == board[2][0].whowin():
         return True
     return False
 def winner(board):
-    for row in board:
-        if row[0].check_win() and row[0].check_win() == row[1].check_win() == row[2].check_win():
-            return row[0].check_win()
-    for col in range(3):
-        if board[0][col].check_win() and board[0][col].check_win() == board[1][col].check_win() == board[2][col].check_win():
-            return board[0][col].check_win()
-    if board[0][0].check_win() and board[0][0].check_win() == board[1][1].check_win() == board[2][2].check_win():
-        return board[0][0].check_win()
-    if board[0][2].check_win() and board[0][2].check_win() == board[1][1].check_win() == board[2][0].check_win():
-        return board[0][2].check_win()
+    for player in [-1, 1]:
+        for i in range(3):
+            if board[i][0].whowin() == board[i][1].whowin() == board[i][2].whowin() == player:
+                return board[i][0].whowin()
+            if board[0][i].whowin() == board[1][i].whowin() == board[2][i].whowin() == player:
+                return board[0][i].whowin()
+        if board[0][0].whowin() == board[1][1].whowin() == board[2][2].whowin() == player:
+            return board[0][0].whowin()
+        if board[0][2].whowin() == board[1][1].whowin() == board[2][0].whowin() == player:
+            return board[0][2].whowin()
     return None
+
+
 
 def checkdraw(board):
     for row in board:
@@ -206,8 +232,8 @@ while not (checkdraw(partie) or checkwin(partie)):
     
     # Vérifier si la sous-partie est terminée
     while souspartie.check_win() or souspartie.check_draw():
-        print("La sous-partie", next_position, "est terminée. Veuillez choisir une autre sous-partie.")
-        next_position = (int(input("Entrez le numéro de la sous-partie (0-2) : ")), int(input("Entrez le numéro de la sous-partie (0-2) : ")))
+        print("La sous-partie", next_position, "est terminée. L'IA choisit une autre sous-partie.")
+        next_position = souspartie.best_global_move(player, partie)
         souspartie = partie[next_position[0]][next_position[1]]
 
     print("Sous-partie actuelle :", next_position)
@@ -217,6 +243,10 @@ while not (checkdraw(partie) or checkwin(partie)):
         souspartie.player_move(player, position[0], position[1])
         print("L'IA a joué en position :", position)
     else:  # Le joueur humain joue en tant que joueur -1
+        position = souspartie.best_move(player, partie, next_position[0], next_position[1])
+        souspartie.player_move(player, position[0], position[1])
+        print("L'IA a joué en position :", position)
+        """
         valid_move = False
         while not valid_move:
             try:
@@ -228,7 +258,7 @@ while not (checkdraw(partie) or checkwin(partie)):
                 else:
                     position = (row, col)
             except ValueError:
-                print("Veuillez entrer des coordonnées valides.")
+                print("Veuillez entrer des coordonnées valides.")"""
 
     next_position = (position[0] % 3, position[1] % 3)
     player = -player
