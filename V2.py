@@ -1,5 +1,5 @@
 import sys
-
+import datetime
 class PetitJeu():
     def __init__(self):
         self.board = [
@@ -71,7 +71,7 @@ class PetitJeu():
         return score"""
 
     def minimax(self, depth, maximizing_player, alpha, beta, global_board, local_row, local_col):
-        if depth == 4 or self.check_win():
+        if depth == 9999 or self.check_win():
             if maximizing_player:
                 return -1 + self.evaluate_board(global_board, local_row, local_col)  # Utiliser l'évaluation heuristique étendue
             else:
@@ -114,6 +114,12 @@ class PetitJeu():
             for col in range(3):
                 score += global_board[row][col].evaluate_local_board() * (1 if self.board[local_row][local_col] == 1 else -1)
 
+        # Ajout de l'évaluation supplémentaire pour prendre en compte l'envoi de l'adversaire sur une case pleine
+        for row in range(3):
+            for col in range(3):
+                if global_board[row][col].check_draw():
+                    score += 15 if self.board[local_row][local_col] == 1 else -15
+
         return score
 
     def evaluate_local_board(self):
@@ -129,8 +135,12 @@ class PetitJeu():
 
         for line in lines:
             if line.count(1) == 2 and line.count(0) == 1:
-                score += 10
+                score += 20
             elif line.count(-1) == 2 and line.count(0) == 1:
+                score -= 20
+            elif line.count(1) == 1 and line.count(0) == 2:
+                score += 10
+            elif line.count(-1) == 1 and line.count(0) == 2:
                 score -= 10
 
         return score
@@ -232,16 +242,29 @@ while not (checkdraw(partie) or checkwin(partie)):
     
     # Vérifier si la sous-partie est terminée
     while souspartie.check_win() or souspartie.check_draw():
-        print("La sous-partie", next_position, "est terminée. L'IA choisit une autre sous-partie.")
-        next_position = souspartie.best_global_move(player, partie)
-        souspartie = partie[next_position[0]][next_position[1]]
+        if(player == 1):
+            print("La sous-partie", next_position, "est terminée. L'IA choisit une autre sous-partie.")
+            next_position = souspartie.best_global_move(player, partie)
+            souspartie = partie[next_position[0]][next_position[1]]
+        if(player == -1):
+            """
+            print("Entrez la sous partie que vous voulez : ")
+            row = int(input("Entrez la ligne (0-2) : "))
+            col = int(input("Entrez la colonne (0-2) : "))
+            souspartie = partie[row][col]"""
+            print("La sous-partie", next_position, "est terminée. L'IA choisit une autre sous-partie.")
+            next_position = souspartie.best_global_move(player, partie)
+            souspartie = partie[next_position[0]][next_position[1]]
 
     print("Sous-partie actuelle :", next_position)
 
     if player == 1:  # L'IA joue en tant que joueur 1
+        t1 = datetime.datetime.now()
         position = souspartie.best_move(player, partie, next_position[0], next_position[1])
         souspartie.player_move(player, position[0], position[1])
         print("L'IA a joué en position :", position)
+        t2 = datetime.datetime.now()-t1
+        print("Temps pris : ",t2)
     else:  # Le joueur humain joue en tant que joueur -1
         position = souspartie.best_move(player, partie, next_position[0], next_position[1])
         souspartie.player_move(player, position[0], position[1])
