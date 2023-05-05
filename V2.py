@@ -1,11 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue May  2 15:23:13 2023
-
-@author: varac
-"""
-
 import sys
+
 class PetitJeu():
     def __init__(self):
         self.board = [
@@ -33,15 +27,34 @@ class PetitJeu():
                 if cell == 0:
                     return False
         return True
+    """def evaluate_board(self):
+        score = 0
+        lines = [
+            self.board[0], self.board[1], self.board[2],
+            [self.board[0][0], self.board[1][0], self.board[2][0]],
+            [self.board[0][1], self.board[1][1], self.board[2][1]],
+            [self.board[0][2], self.board[1][2], self.board[2][2]],
+            [self.board[0][0], self.board[1][1], self.board[2][2]],
+            [self.board[0][2], self.board[1][1], self.board[2][0]]
+        ]
 
-    def minimax(self, depth, maximizing_player, alpha, beta):
-        if self.check_win():
+        for line in lines:
+            if line.count(1) == 2 and line.count(0) == 1:
+                score += 10
+            elif line.count(-1) == 2 and line.count(0) == 1:
+                score -= 10
+
+        return score"""
+
+    def minimax(self, depth, maximizing_player, alpha, beta, global_board, local_row, local_col):
+        if depth == 4 or self.check_win():
             if maximizing_player:
-                return -1
+                return -1 + self.evaluate_board(global_board, local_row, local_col)  # Utiliser l'évaluation heuristique étendue
             else:
-                return 1
+                return 1 - self.evaluate_board(global_board, local_row, local_col)  # Utiliser l'évaluation heuristique étendue
         if self.check_draw():
             return 0
+
 
         if maximizing_player:
             max_eval = -sys.maxsize
@@ -49,7 +62,8 @@ class PetitJeu():
                 for col in range(3):
                     if self.board[row][col] == 0:
                         self.board[row][col] = 1
-                        eval = self.minimax(depth + 1, False, alpha, beta)
+                        eval = self.minimax(depth + 1, False, alpha, beta, global_board, local_row, local_col)
+
                         self.board[row][col] = 0
                         max_eval = max(max_eval, eval)
                         alpha = max(alpha, eval)
@@ -62,51 +76,7 @@ class PetitJeu():
                 for col in range(3):
                     if self.board[row][col] == 0:
                         self.board[row][col] = -1
-                        eval = self.minimax(depth + 1, True, alpha, beta)
-                        self.board[row][col] = 0
-                        min_eval = min(min_eval, eval)
-                        beta = min(beta, eval)
-                        if beta <= alpha:
-                            break
-            return min_eval
-        
-    def ultimate_minimax(self, depth, maximizing_player, alpha, beta, main_board):
-        if self.check_win():
-            if maximizing_player:
-                return -1
-            else:
-                return 1
-        if self.check_draw():
-            return 0
-
-        if maximizing_player:
-            max_eval = -sys.maxsize
-            for row in range(3):
-                for col in range(3):
-                    if self.board[row][col] == 0:
-                        self.board[row][col] = 1
-                        next_board = main_board[row][col]
-                        if not next_board.check_win() and not next_board.check_draw():
-                            eval = next_board.minimax(depth + 1, False, alpha, beta)
-                        else:
-                            eval = self.minimax(depth + 1, False, alpha, beta)
-                        self.board[row][col] = 0
-                        max_eval = max(max_eval, eval)
-                        alpha = max(alpha, eval)
-                        if beta <= alpha:
-                            break
-            return max_eval
-        else:
-            min_eval = sys.maxsize
-            for row in range(3):
-                for col in range(3):
-                    if self.board[row][col] == 0:
-                        self.board[row][col] = -1
-                        next_board = main_board[row][col]
-                        if not next_board.check_win() and not next_board.check_draw():
-                            eval = next_board.minimax(depth + 1, True, alpha, beta)
-                        else:
-                            eval = self.minimax(depth + 1, True, alpha, beta)
+                        eval = self.minimax(depth + 1, True, alpha, beta, global_board, local_row, local_col)
                         self.board[row][col] = 0
                         min_eval = min(min_eval, eval)
                         beta = min(beta, eval)
@@ -114,14 +84,40 @@ class PetitJeu():
                             break
             return min_eval
 
-    def best_move(self, player, main_board):
+    def evaluate_board(self, global_board, local_row, local_col):
+        score = 0
+        for row in range(3):
+            for col in range(3):
+                score += global_board[row][col].evaluate_local_board() * (1 if self.board[local_row][local_col] == 1 else -1)
+
+        return score
+
+    def evaluate_local_board(self):
+        score = 0
+        lines = [
+            self.board[0], self.board[1], self.board[2],
+            [self.board[0][0], self.board[1][0], self.board[2][0]],
+            [self.board[0][1], self.board[1][1], self.board[2][1]],
+            [self.board[0][2], self.board[1][2], self.board[2][2]],
+            [self.board[0][0], self.board[1][1], self.board[2][2]],
+            [self.board[0][2], self.board[1][1], self.board[2][0]]
+        ]
+
+        for line in lines:
+            if line.count(1) == 2 and line.count(0) == 1:
+                score += 10
+            elif line.count(-1) == 2 and line.count(0) == 1:
+                score -= 10
+
+        return score
+    def best_move(self, player, global_board, local_row, local_col):
         best_eval = -sys.maxsize if player == 1 else sys.maxsize
         move = (-1, -1)
         for row in range(3):
             for col in range(3):
                 if self.board[row][col] == 0:
                     self.board[row][col] = player
-                    eval = self.ultimate_minimax(0, player == -1, -sys.maxsize, sys.maxsize, main_board)
+                    eval = self.minimax(0, player == -1, -sys.maxsize, sys.maxsize, global_board, local_row, local_col)
                     self.board[row][col] = 0
                     if player == 1 and eval > best_eval:
                         best_eval = eval
@@ -130,8 +126,7 @@ class PetitJeu():
                         best_eval = eval
                         move = (row, col)
         return move
-    
-    
+
 
     def print_board(self):
         res = ""
@@ -145,14 +140,6 @@ class PetitJeu():
             return True
         return False
 
-def cell_to_char(cell):
-    if cell == 0:
-        return "."
-    elif cell == 1:
-        return "X"
-    else:
-        return "O"
-    
 def checkwin(board):
     for row in board:
         if row[0].check_win() and row[0].check_win() == row[1].check_win() == row[2].check_win():
@@ -178,16 +165,23 @@ def winner(board):
         return board[0][2].check_win()
     return None
 
-def is_valid_coordinate(x, y):
-    return 0 <= x < 3 and 0 <= y < 3
-
-
 def checkdraw(board):
     for row in board:
         for cell in row:
             if not (cell.check_win() or cell.check_draw()):
                 return False
     return True
+
+def cell_to_char(cell):
+    if cell == 0:
+        return "."
+    elif cell == 1:
+        return "X"
+    else:
+        return "O"
+
+def is_valid_coordinate(x, y):
+    return 0 <= x < 3 and 0 <= y < 3
 
 def displaygame(game):
     for row in game:
@@ -201,7 +195,6 @@ def displaygame(game):
         print("───────────────────────────────────────────")
         print()
 
-
 partie = [[PetitJeu() for j in range(3)] for j in range(3)]
 position = (0, 0)
 next_position = (0, 0)
@@ -210,7 +203,8 @@ player = 1
 while not (checkdraw(partie) or checkwin(partie)):
     displaygame(partie)
     souspartie = partie[next_position[0]][next_position[1]]
-
+    
+    # Vérifier si la sous-partie est terminée
     while souspartie.check_win() or souspartie.check_draw():
         print("La sous-partie", next_position, "est terminée. Veuillez choisir une autre sous-partie.")
         next_position = (int(input("Entrez le numéro de la sous-partie (0-2) : ")), int(input("Entrez le numéro de la sous-partie (0-2) : ")))
@@ -219,7 +213,7 @@ while not (checkdraw(partie) or checkwin(partie)):
     print("Sous-partie actuelle :", next_position)
 
     if player == 1:  # L'IA joue en tant que joueur 1
-        position = souspartie.best_move(player, partie)
+        position = souspartie.best_move(player, partie, next_position[0], next_position[1])
         souspartie.player_move(player, position[0], position[1])
         print("L'IA a joué en position :", position)
     else:  # Le joueur humain joue en tant que joueur -1
@@ -228,19 +222,17 @@ while not (checkdraw(partie) or checkwin(partie)):
             try:
                 row = int(input("Entrez la ligne (0-2) : "))
                 col = int(input("Entrez la colonne (0-2) : "))
-                if is_valid_coordinate(row, col):
-                    valid_move = souspartie.player_move(player, row, col)
-                    if not valid_move:
-                        print("Mouvement invalide, veuillez réessayer.")
-                    else:
-                        position = (row, col)
+                valid_move = souspartie.player_move(player, row, col)
+                if not valid_move:
+                    print("Mouvement invalide, veuillez réessayer.")
                 else:
-                    print("Coordonnées hors limites, veuillez entrer des coordonnées valides.")
+                    position = (row, col)
             except ValueError:
                 print("Veuillez entrer des coordonnées valides.")
 
     next_position = (position[0] % 3, position[1] % 3)
     player = -player
+
 
 displaygame(partie)
 
