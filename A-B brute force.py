@@ -113,11 +113,11 @@ class Board:
         if self.winner is None:
             return 0
         elif self.winner == self.current_player:
-            return 100
+            return sys.maxsize-1
         elif self.winner == "tie":
-            return 1  # Match nul
+            return 0  # Match nul
         else:
-            return -100
+            return -sys.maxsize
 
 
     # Affichage       
@@ -157,7 +157,7 @@ def Alpha_Beta_Search(board, depth):
         sub_i, sub_j = board.current_sub_board_ij
         for action_i, action_j in board.sub_boards[sub_i][sub_j].actions:
             new_board = board.result(board.current_sub_board_ij, [action_i, action_j])
-            value = Max_Value(new_board, alpha, beta, depth-1)
+            value = Max_Value(board, new_board, alpha, beta, depth-1)
             if value > alpha:
                 alpha = value
                 best_action = [board.current_sub_board_ij, [action_i, action_j]]
@@ -167,32 +167,63 @@ def Alpha_Beta_Search(board, depth):
             if board.sub_boards[sub_i][sub_j].winner is None:
                 for action_i, action_j in board.sub_boards[sub_i][sub_j].actions:
                     new_board = board.result([sub_i, sub_j], [action_i, action_j])
-                    value = Max_Value(new_board, alpha, beta, depth-1)
+                    value = Max_Value(board, new_board, alpha, beta, depth-1)
                     if value > alpha:
                         alpha = value
                         best_action = [[sub_i, sub_j], [action_i, action_j]]
         return best_action
 
  
-def Max_Value(board, a, b, depth):
+def Max_Value(prev_board, board, a, b, depth):
+    
+      
+    
     board.current_player = 'O'
+    
+    
+    prev_winner = [subBoard.winner for row in prev_board.sub_boards for subBoard in row ]
+    new_winner = [subBoard.winner for row in board.sub_boards for subBoard in row]
+    
+    
+
     if board.terminalTest() or depth == 0:
-        """
-        print('end',board.utility())
+        current_player = 'O'
+        opponent = 'X'
+        
+        #application heuristiques
+        u = board.utility()
+        somme = 0
+        if(u == 0):
+            if(new_winner.count(None)-prev_winner.count(None)<0):
+                h1 = H1(prev_winner, new_winner, current_player)
+                somme+=h1
+                
+                if(h1 > 0):
+                    h2 = H2(prev_winner, new_winner, current_player,opponent)
+                    h3 = H3(prev_winner, new_winner, current_player,opponent)
+                    somme += h2 + h3
+                    if(h2 == 0):
+                        h4 = H4(prev_winner, new_winner, current_player,opponent)
+                        somme += h4
+                
+                    
+                 
+        print('end',u+somme)
         board.print_board()
         for subbords in board.sub_boards:
             for subbbords in subbords:
                 print(subbbords.winner,end = ' ')
                 print(board.action())
-          """      
-        return board.utility()
-    v = -sys.maxsize - 1
+          
+          
+          
+        return u+somme
     
+    v = -sys.maxsize - 1
     if board.current_sub_board_ij is not None and board.sub_boards[board.current_sub_board_ij[0]][board.current_sub_board_ij[1]].winner is None:
         for action_subBoard in board.sub_boards[board.current_sub_board_ij[0]][board.current_sub_board_ij[1]].actions:
-        # ...
 
-            v = max(v, Min_Value(board.result(board.current_sub_board_ij, action_subBoard), a, b, depth - 1))
+            v = max(v, Min_Value(board, board.result(board.current_sub_board_ij, action_subBoard), a, b, depth - 1))
 
             if v >= b:
                 return v
@@ -201,16 +232,47 @@ def Max_Value(board, a, b, depth):
         
         for action_board in board.action():       
             for action_subBoard in board.sub_boards[action_board[0]][action_board[1]].actions:
-                v = max(v, Min_Value(board.result(action_board, action_subBoard), a, b, depth - 1))
+                v = max(v, Min_Value(board, board.result(action_board, action_subBoard), a, b, depth - 1))
                 if v >= b:
                     return v
                 a = max(a, v)
     return v
 
-def Min_Value(board, a, b, depth):
+def Min_Value(prev_board, board, a, b, depth):
+    
+    
+    
+    
+    
+    
     
     board.current_player = 'X'
+    
+    prev_winner = [subBoard.winner for row in prev_board.sub_boards for subBoard in row ]
+    new_winner = [subBoard.winner for row in board.sub_boards for subBoard in row]
+    
     if board.terminalTest() or depth == 0:
+        current_player = 'X'
+        opponent = 'O'
+
+        #application heuristiques
+        u = board.utility()
+        somme = 0
+        if(u == 0):
+            if(new_winner.count(None)-prev_winner.count(None)<0):
+                h1 = H1(prev_winner, new_winner, current_player)
+                somme+=h1
+                
+                if(h1 > 0):
+                    h2 = H2(prev_winner, new_winner, current_player,opponent)
+                    h3 = H3(prev_winner, new_winner, current_player,opponent)
+                    somme += h2 + h3
+                    if(h2 == 0):
+                        h4 = H4(prev_winner, new_winner, current_player,opponent)
+                        somme += h4
+                
+                    
+
         """
         print('end',board.utility())
         board.print_board()
@@ -219,14 +281,14 @@ def Min_Value(board, a, b, depth):
                 print(subbbords.winner,end = ' ')
            """  
         
-        return board.utility()
+        return u+somme
     v = sys.maxsize
     if board.current_sub_board_ij is not None and board.sub_boards[board.current_sub_board_ij[0]][board.current_sub_board_ij[1]].winner is None:
         for action_subBoard in board.sub_boards[board.current_sub_board_ij[0]][board.current_sub_board_ij[1]].actions:
         # ...
           
 
-            v = min(v, Max_Value(board.result(board.current_sub_board_ij, action_subBoard), a, b, depth - 1))
+            v = min(v, Max_Value(board, board.result(board.current_sub_board_ij, action_subBoard), a, b, depth - 1))
             if v <= a:
                 return v
             b = min(b, v)
@@ -235,13 +297,106 @@ def Min_Value(board, a, b, depth):
             for action_subBoard in board.sub_boards[action_board[0]][action_board[1]].actions:
                
 
-                v = min(v, Max_Value(board.result(action_board, action_subBoard), a, b, depth - 1))
+                v = min(v, Max_Value(board, board.result(action_board, action_subBoard), a, b, depth - 1))
                 if v <= a:
                     return v
                 b = min(b, v)
         
     
     return v   
+
+#%% Heuristics
+
+def H1(prev_winner, new_winner, current_player): # gagner ou perdre une board vaut +-100 pts    
+    if(new_winner.count(current_player)-prev_winner.count(current_player)>0):
+        return 100
+    else:
+        return -100
+    
+def H2(prev_winner, new_winner, current_player,opponent): #gagner 2 boards sur colonne (victoire possible), ligne diag vaut 200
+    somme =0
+    #matrice des win -lignes
+    prev_winner = [prev_winner[i:i+3] for i in range(0, len(prev_winner), 3)]
+    new_winner = [new_winner[i:i+3] for i in range(0, len(new_winner), 3)]
+    
+    # Lignes
+    prev_row = [row for row in prev_winner if row.count(current_player) == 2 and row.count(opponent) == 0 and row.count('tie')==0]
+    new_row = [row for row in new_winner if row.count(current_player) == 2 and row.count(opponent) == 0 and row.count('tie')==0]
+    somme += 200 * (len(new_row)-len(prev_row))
+    
+    # Colonnes
+    prev_col = [[row[col] for row in prev_winner] for col in range(len(prev_winner[0]))]
+    new_col = [[row[col] for row in new_winner] for col in range(len(new_winner[0]))]
+    prev_col = [col for col in prev_col if col.count(current_player) == 2 and col.count(opponent) == 0 and col.count('tie')==0]
+    new_col = [col for col in new_col if col.count(current_player) == 2 and col.count(opponent) == 0 and col.count('tie')==0]
+    somme += 200 * (len(new_col)-len(prev_col))
+    
+    # Diagonales
+    prev_diag = [[prev_winner[i][i] for i in range(len(prev_winner))], [prev_winner[i][len(prev_winner) - 1 - i] for i in range(len(prev_winner))]]
+    new_diag = [[new_winner[i][i] for i in range(len(new_winner))], [new_winner[i][len(new_winner) - 1 - i] for i in range(len(new_winner))]]
+    prev_diag = [diag for diag in prev_diag if diag.count(current_player) == 2 and diag.count(opponent) == 0 and diag.count('tie')==0]
+    new_diag = [diag for diag in new_diag if diag.count(current_player) == 2 and diag.count(opponent) == 0 and diag.count('tie')==0]
+    somme += 200 * (len(new_diag)-len(prev_diag))
+    
+    return somme
+
+def H3(prev_winner, new_winner, current_player,opponent): #faire opposition 150 pts
+  
+    #matrice des win -lignes
+    prev_winner = [prev_winner[i:i+3] for i in range(0, len(prev_winner), 3)]
+    new_winner = [new_winner[i:i+3] for i in range(0, len(new_winner), 3)]
+    
+    # Lignes
+    prev_row = [row for row in prev_winner if row.count(opponent) == 2 and row.count(current_player) == 1]
+    new_row = [row for row in new_winner if row.count(opponent) == 2 and row.count(current_player) == 1]
+    return 150 * (len(new_row)-len(prev_row))
+
+    # Colonnes
+    prev_col = [[row[col] for row in prev_winner] for col in range(len(prev_winner[0]))]
+    new_col = [[row[col] for row in new_winner] for col in range(len(new_winner[0]))]
+    prev_col = [col for col in prev_col if col.count(opponent) == 2 and col.count(current_player) == 1]
+    new_col = [col for col in new_col if col.count(opponent) == 2 and col.count(current_player) == 1]
+    return 150 * (len(new_col)-len(prev_col))
+
+
+    # Diagonales
+    prev_diag = [[prev_winner[i][i] for i in range(len(prev_winner))], [prev_winner[i][len(prev_winner) - 1 - i] for i in range(len(prev_winner))]]
+    new_diag = [[new_winner[i][i] for i in range(len(new_winner))], [new_winner[i][len(new_winner) - 1 - i] for i in range(len(new_winner))]]
+    prev_diag = [diag for diag in prev_diag if diag.count(opponent) == 2 and diag.count(current_player) == 0]
+    new_diag = [diag for diag in new_diag if diag.count(opponent) == 2 and diag.count(current_player) == 0]
+    return 150 * (len(new_diag)-len(prev_diag))
+   
+def H4(prev_winner, new_winner, current_player,opponent): #gagner mais bloqué
+
+    #matrice des win -lignes
+    prev_winner = [prev_winner[i:i+3] for i in range(0, len(prev_winner), 3)]
+    new_winner = [new_winner[i:i+3] for i in range(0, len(new_winner), 3)]
+    
+    # Lignes
+    prev_row = [row for row in prev_winner if row.count(current_player) >= 1 and row.count(opponent) == 0 and row.count('tie')==0]
+    new_row = [row for row in new_winner if row.count(current_player) >= 1 and row.count(opponent) == 0 and row.count('tie')==0]
+    if len(new_row)-len(prev_row) :
+        return 0
+
+    # Colonnes
+    prev_col = [[row[col] for row in prev_winner] for col in range(len(prev_winner[0]))]
+    new_col = [[row[col] for row in new_winner] for col in range(len(new_winner[0]))]
+    prev_col = [col for col in prev_col if col.count(current_player) >= 1 and col.count(opponent) == 0 and col.count('tie')==0]
+    new_col = [col for col in new_col if col.count(current_player) >= 1 and col.count(opponent) == 0 and col.count('tie')==0]
+    if len(new_col)-len(prev_col) :
+        return 0
+
+
+    # Diagonales
+    prev_diag = [[prev_winner[i][i] for i in range(len(prev_winner))], [prev_winner[i][len(prev_winner) - 1 - i] for i in range(len(prev_winner))]]
+    new_diag = [[new_winner[i][i] for i in range(len(new_winner))], [new_winner[i][len(new_winner) - 1 - i] for i in range(len(new_winner))]]
+    prev_diag = [diag for diag in prev_diag if diag.count(current_player) >= 2 and diag.count(opponent) == 0 and diag.count('tie')==0]
+    new_diag = [diag for diag in new_diag if diag.count(current_player) >= 2 and diag.count(opponent) == 0 and diag.count('tie')==0]
+    if len(new_diag)-len(prev_diag) :
+        return 0
+    
+    return -150
+
 
 
 #%% Main
@@ -278,7 +433,7 @@ def play_ultimate_tic_tac_toe():
         else:
             # Ordinateur (Alpha-Beta)
             print("Tour de l'ordinateur (O)...")
-            best_action = Alpha_Beta_Search(board,  8)
+            best_action = Alpha_Beta_Search(board,  100)
             board = board.result(best_action[0], best_action[1])
             board.current_player = 'X'
 
