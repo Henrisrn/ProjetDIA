@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 import sys
 from copy import deepcopy
 
@@ -101,7 +101,7 @@ class Board:
 
         new_board.current_sub_board_ij = in_SubBoard
         new_board.sub_boards[in_Board[0]][in_Board[1]].result(in_SubBoard, current_player)
-        if new_board.sub_boards[in_SubBoard[0]][in_SubBoard[1]].TerminalTest(current_player):
+        if new_board.sub_boards[in_SubBoard[0]][in_SubBoard[1]].winner is not None:
             new_board.current_sub_board_ij = None       
         new_board.current_player = 'X' if current_player =='O' else 'O'
         
@@ -159,10 +159,10 @@ def Alpha_Beta_Search(board, depth):
         for action_i, action_j in board.sub_boards[sub_i][sub_j].actions:
             new_board = board.result(board.current_sub_board_ij, [action_i, action_j])
             value = Max_Value(board, new_board, alpha, beta, depth-1,board.current_sub_board_ij)
-            if value > alpha:
-                alpha = value
-                best_action = [board.current_sub_board_ij, [action_i, action_j]]
-        print('--',alpha, best_action)
+            if value < beta:
+                beta = value
+                best_action = [[sub_i, sub_j], [action_i, action_j]]
+        print('--',beta, best_action)
         return best_action
     else:
         for [sub_i, sub_j] in board.action():
@@ -170,10 +170,10 @@ def Alpha_Beta_Search(board, depth):
                 for action_i, action_j in board.sub_boards[sub_i][sub_j].actions:
                     new_board = board.result([sub_i, sub_j], [action_i, action_j])
                     value = Max_Value(board, new_board, alpha, beta, depth-1,[sub_i, sub_j])
-                    if value > alpha:
-                        alpha = value
+                    if value < beta:
+                        beta = value
                         best_action = [[sub_i, sub_j], [action_i, action_j]]
-        print('--',alpha, best_action)
+        print('--',beta, best_action)
         return best_action
 
  
@@ -191,10 +191,11 @@ def Max_Value(prev_board, board, a, b, depth,chosen_board):
         if(u == 0):
             prev_winner = [subBoard.winner for row in prev_board.sub_boards for subBoard in row ]
             new_winner = [subBoard.winner for row in board.sub_boards for subBoard in row]
-            
+            '''
             print(prev_winner,new_winner.count(None))
             print(new_winner)
             print('HHHHHHHHHHHHH',new_winner.count(None)-prev_winner.count(None))
+            '''
             if(new_winner.count(None)-prev_winner.count(None)<0):
                 h1 = H1(prev_winner, new_winner, current_player, opponent)
                 somme+=h1
@@ -224,8 +225,8 @@ def Max_Value(prev_board, board, a, b, depth,chosen_board):
                 somme -= 20 
                         
             
-        print('end',u+somme)
-        board.print_board()
+        #print('end',u+somme)
+        #board.print_board()
         """
         for subbords in board.sub_boards:
             for subbbords in subbords:
@@ -236,30 +237,28 @@ def Max_Value(prev_board, board, a, b, depth,chosen_board):
           
         return u+somme
     
-    best = -sys.maxsize - 1
+    v = -sys.maxsize - 1
     if board.current_sub_board_ij is not None and board.sub_boards[board.current_sub_board_ij[0]][board.current_sub_board_ij[1]].winner is None:
         for action_subBoard in board.sub_boards[board.current_sub_board_ij[0]][board.current_sub_board_ij[1]].actions:
 
-            val = max(best, Min_Value(board, board.result(board.current_sub_board_ij, action_subBoard), a, b, depth - 1,board.current_sub_board_ij))           
-            best = max(best, val)
-            a = max(a, best)
-            print('max',best, board.current_sub_board_ij, action_subBoard)
-            if (b <= a):
-                return best
+            v = max(v, Min_Value(board, board.result(board.current_sub_board_ij, action_subBoard), a, b, depth - 1,board.current_sub_board_ij))           
+            print('min',v, board.current_sub_board_ij, action_subBoard,end = '      ')
+            if (b < v):
+                return v
+            a = max(a,v)
     
 
     else:
         
         for action_board in board.action():       
             for action_subBoard in board.sub_boards[action_board[0]][action_board[1]].actions:
-                val = max(best, Min_Value(board, board.result(action_board, action_subBoard), a, b, depth - 1,action_board))
-                best = max(best, val)
-                a = max(a, best)
-                print('max',best, action_board, action_subBoard)
-                if (b <= a):
-                    return best
+                v = max(v, Min_Value(board, board.result(action_board, action_subBoard), a, b, depth - 1,action_board))
+                print('min',v, action_board, action_subBoard,end = '      ')
+                if (b <= v):
+                    return v
+                a = max(a,v)
                 
-    return best           
+    return v           
                 
         
 
@@ -317,7 +316,7 @@ def Min_Value(prev_board, board, a, b, depth,chosen_board):
          """   
         
         return u+somme
-    best = sys.maxsize
+    v = sys.maxsize
     
     
     if board.current_sub_board_ij is not None and board.sub_boards[board.current_sub_board_ij[0]][board.current_sub_board_ij[1]].winner is None:
@@ -325,24 +324,23 @@ def Min_Value(prev_board, board, a, b, depth,chosen_board):
         # ...
           
 
-            v = min(best, Max_Value(board, board.result(board.current_sub_board_ij, action_subBoard), a, b, depth - 1,board.current_sub_board_ij))
-            best = min(best, v)
+            v = min(v, Max_Value(board, board.result(board.current_sub_board_ij, action_subBoard), a, b, depth - 1,board.current_sub_board_ij))
+            print('max',v, board.current_sub_board_ij, action_subBoard, end = '      ')
+            if(v<a):
+                return v
             b = min(b,v)
-            if(b<=a):
-                return best
         
     
     else:
         for action_board in board.action():       
             for action_subBoard in board.sub_boards[action_board[0]][action_board[1]].actions:
                
-
-                v = min(best, Max_Value(board, board.result(action_board, action_subBoard), a, b, depth - 1,action_board))
-                best = min(best, v)
+                print('max',v, action_board, action_subBoard, end = '      ')
+                v = min(v, Max_Value(board, board.result(action_board, action_subBoard), a, b, depth - 1,action_board))
+                if(v<a):
+                    return v
                 b = min(b,v)
-                if(b<=a):
-                    return best
-    return best
+    return v
          
 
 #%% Heuristics
@@ -561,7 +559,7 @@ def play_ultimate_tic_tac_toe(joueur):
         else:
             # Ordinateur (Alpha-Beta)
             print("Tour de l'ordinateur (O)...")
-            best_action = Alpha_Beta_Search(board,  3)
+            best_action = Alpha_Beta_Search(board,  2)
             board = board.result(best_action[0], best_action[1])
             board.current_player = 'X'
 
