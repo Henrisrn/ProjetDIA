@@ -191,7 +191,7 @@ def Max_Value(prev_board, board, a, b, depth,chosen_board):
         #application heuristiques
         u = board.utility(current_player)
         somme = 0
-        if(u == 0):
+        if(board.winner == None):
             new_winner = [subBoard.winner for row in board.sub_boards for subBoard in row]
             '''
             print(prev_winner,new_winner.count(None))
@@ -274,7 +274,7 @@ def Min_Value(prev_board, board, a, b, depth,chosen_board):
         #application heuristiques
         u = board.utility(current_player)
         somme = 0
-        if(u == 0):
+        if(board.winner == None):
             new_winner = [subBoard.winner for row in board.sub_boards for subBoard in row]
             '''
             print(prev_winner,new_winner.count(None))
