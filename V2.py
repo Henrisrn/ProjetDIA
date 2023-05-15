@@ -221,6 +221,16 @@ def winner(board):
     return None
 
 
+def ask_who_starts():
+    while True:
+        response = input("Qui commence? IA (1) ou joueur (2) ? ")
+        if response == "1":
+            return 1
+        elif response == "2":
+            return -1
+        else:
+            print("Réponse non valide. Veuillez entrer 1 ou 2.")
+
 #Permet de vérifié si match nul
 def checkdraw(board):
     for row in board:
@@ -240,11 +250,27 @@ def cell_to_char(cell):
 def is_valid_coordinate(x, y):
     return 0 <= x < 3 and 0 <= y < 3
 
+def coordinates_to_number(subgame_coord, cell_coord):
+    num = (subgame_coord[0] * 3 + subgame_coord[1]) * 9 + (cell_coord[0] * 3 + cell_coord[1]) + 1
+    return num
+
 def number_to_coordinates(num):
     num -= 1
     subgame_coord = (num // 3, num % 3)
     cell_coord = ((num % 9) // 3, (num % 9) % 3)
     return subgame_coord, cell_coord
+
+def ask_for_subgame():
+    while True:
+        subgame_num = input("Choisissez un sous-jeu pour commencer (1-9) : ")
+        try:
+            subgame_num = int(subgame_num)
+            if 1 <= subgame_num <= 9:
+                return number_to_coordinates(subgame_num)
+            else:
+                print("Le numéro doit être compris entre 1 et 9.")
+        except ValueError:
+            print("Veuillez entrer un nombre valide.")
 
 # Afficher le plateau de jeu global
 def displaygame(game):
@@ -260,9 +286,18 @@ def displaygame(game):
 #Création de la partie avec variable d'initialisation
 partie = [[PetitJeu() for j in range(3)] for j in range(3)]
 position = (0, 0)
-next_position = (0, 0)
-player = 1
 
+souspartie = partie[0][0]
+player = ask_who_starts()
+if(player == 1):
+            print("L'IA choisit une sous-partie.")
+            next_position = souspartie.best_global_move(player, partie)
+            #souspartie = partie[next_position[0]][next_position[1]]
+if(player == -1):
+            num = int(input("Entrez un chiffre entre 1 et 9 pour sélectionner une sous-partie : "))
+            next_position = number_to_coordinates(num)[0]
+            #souspartie = partie[next_position[0]][next_position[1]]
+    
 #Commencement de la boucle de jeu
 while not (checkdraw(partie) or checkwin(partie)):
     displaygame(partie)
@@ -271,11 +306,12 @@ while not (checkdraw(partie) or checkwin(partie)):
     # Vérifier si la sous-partie est terminée
     while souspartie.check_win() or souspartie.check_draw():
         if(player == 1):
-            print("La sous-partie", next_position, "est terminée. L'IA choisit une autre sous-partie.")
+            a = ((next_position[0] * 3 + next_position[1]) * 9 + (next_position[0] * 3 + next_position[1]) + 1)
+            print("La sous-partie", a, "est terminée. L'IA choisit une autre sous-partie.")
             next_position = souspartie.best_global_move(player, partie)
             souspartie = partie[next_position[0]][next_position[1]]
         if(player == -1):
-            print("La sous-partie", next_position, "est terminée. Veuillez choisir une autre sous-partie.")
+            print("La sous-partie",a, "est terminée. Veuillez choisir une autre sous-partie.")
             num = int(input("Entrez un chiffre entre 1 et 9 pour sélectionner une autre sous-partie : "))
             next_position = number_to_coordinates(num)[0]
             souspartie = partie[next_position[0]][next_position[1]]
@@ -283,7 +319,9 @@ while not (checkdraw(partie) or checkwin(partie)):
     if player == 1:
         move = souspartie.best_move(player, partie, next_position[0], next_position[1])
         souspartie.player_move(player, move[0], move[1])
-        print(f"L'IA joue dans la sous-partie {next_position} à la position {move}.")
+        a = ((next_position[0] * 3 + next_position[1]) * 9 + (next_position[0] * 3 + next_position[1]) + 1)
+        b = ((move[0] * 3 + move[1]) * 9 + (move[0] * 3 + move[1]) + 1)
+        print(f"L'IA joue dans la sous-partie ",a," à la position ",b,".")
     else:
         valid_move = False
         while not valid_move:
