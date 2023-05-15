@@ -240,6 +240,12 @@ def cell_to_char(cell):
 def is_valid_coordinate(x, y):
     return 0 <= x < 3 and 0 <= y < 3
 
+def number_to_coordinates(num):
+    num -= 1
+    subgame_coord = (num // 3, num % 3)
+    cell_coord = ((num % 9) // 3, (num % 9) % 3)
+    return subgame_coord, cell_coord
+
 # Afficher le plateau de jeu global
 def displaygame(game):
     horizontal_line = "-" * 21
@@ -269,51 +275,31 @@ while not (checkdraw(partie) or checkwin(partie)):
             next_position = souspartie.best_global_move(player, partie)
             souspartie = partie[next_position[0]][next_position[1]]
         if(player == -1):
-            
-            print("Entrez la sous partie que vous voulez : ")
-            row = int(input("Entrez la ligne (0-2) : "))
-            col = int(input("Entrez la colonne (0-2) : "))
-            souspartie = partie[row][col]
-            """
-            print("La sous-partie", next_position, "est terminée. L'IA choisit une autre sous-partie.")
-            next_position = souspartie.best_global_move(player, partie)
-            souspartie = partie[next_position[0]][next_position[1]]"""
+            print("La sous-partie", next_position, "est terminée. Veuillez choisir une autre sous-partie.")
+            num = int(input("Entrez un chiffre entre 1 et 9 pour sélectionner une autre sous-partie : "))
+            next_position = number_to_coordinates(num)[0]
+            souspartie = partie[next_position[0]][next_position[1]]
 
-    print("Sous-partie actuelle :", next_position)
-    # Gestion des coups pour l'IA et le joueur humain
-    if player == 1:  # L'IA joue en tant que joueur 1
-        t1 = datetime.datetime.now()
-        position = souspartie.best_move(player, partie, next_position[0], next_position[1])
-        souspartie.player_move(player, position[0], position[1])
-        print("L'IA a joué en position :", position)
-        t2 = datetime.datetime.now()-t1
-        print("Temps pris : ",t2)
-    else:  # Le joueur humain joue en tant que joueur -1
-        """position = souspartie.best_move(player, partie, next_position[0], next_position[1])
-        souspartie.player_move(player, position[0], position[1])
-        print("L'IA a joué en position :", position)
-        """
+    if player == 1:
+        move = souspartie.best_move(player, partie, next_position[0], next_position[1])
+        souspartie.player_move(player, move[0], move[1])
+        print(f"L'IA joue dans la sous-partie {next_position} à la position {move}.")
+    else:
         valid_move = False
         while not valid_move:
-            try:
-                row = int(input("Entrez la ligne (0-2) : "))
-                col = int(input("Entrez la colonne (0-2) : "))
-                valid_move = souspartie.player_move(player, row, col)
-                if not valid_move:
-                    print("Mouvement invalide, veuillez réessayer.")
-                else:
-                    position = (row, col)
-            except ValueError:
-                print("Veuillez entrer des coordonnées valides.")
-    # Changer de joueur et déterminer la prochaine position
-    next_position = (position[0] % 3, position[1] % 3)
-    player = -player
+            num = int(input("Entrez un chiffre entre 1 et 9 pour sélectionner une case dans la sous-partie : "))
+            move = number_to_coordinates(num)[1]
+            valid_move = souspartie.player_move(player, move[0], move[1])
+            if not valid_move:
+                print("Cette case est déjà occupée. Veuillez choisir une autre case.")
 
+    # Passer au joueur suivant et déterminer la position suivante
+    player *= -1
+    next_position = move
 
+# Afficher le résultat final
 displaygame(partie)
-
-winning_player = winner(partie)
-if winning_player is None:
-    print("Match nul !")
+if checkwin(partie):
+    print("Le gagnant est", cell_to_char(winner(partie)))
 else:
-    print("Le joueur", winning_player, "a gagné la partie !")
+    print("Match nul")
