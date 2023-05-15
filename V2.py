@@ -183,7 +183,7 @@ class PetitJeu():
     def print_board(self):
         res = ""
         for row in self.board:
-            res += " | ".join([cell_to_char(cell) for cell in row]) + "\n"
+            res += " ".join([cell_to_char(cell) for cell in row]) + "\n"
         return res
     # La fonction player_move tente de placer un coup du joueur (1 pour l'IA, -1 pour le joueur humain)
     # sur le plateau de jeu à une position spécifique (row, col). Si le coup est valide, la fonction
@@ -242,17 +242,15 @@ def is_valid_coordinate(x, y):
 
 # Afficher le plateau de jeu global
 def displaygame(game):
+    horizontal_line = "-" * 21
     for row in game:
         for i in range(3):  # Pour chaque ligne des sous-jeux
             line = ""
             for subgame in row:  # Pour chaque sous-jeu de la ligne
                 subgame_rows = subgame.print_board().split("\n")
-                line += subgame_rows[i] + "   │││   "
+                line += subgame_rows[i] + " │ "
             print(line.strip())
-        print()
-        print("───────────────────────────────────────────")
-        print()
-        
+        print(horizontal_line)
 #Création de la partie avec variable d'initialisation
 partie = [[PetitJeu() for j in range(3)] for j in range(3)]
 position = (0, 0)
